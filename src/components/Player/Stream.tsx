@@ -10,16 +10,10 @@ import { toast } from "react-toastify";
 import ErrorMessage from "../ErrorMessage";
 
 
-
-
-
-
 interface PosterData {
   posterPath?: string;
   backdropPath?: string;
 }
-
-let artInstance: any = null
 
 const Stream = ({
   params,
@@ -33,7 +27,6 @@ const Stream = ({
   const dispatch = useAppDispatch();
   const [url, setUrl] = useState<string>("");
   const [posterData, setPosterData] = useState<PosterData>({});
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const ref = React.useRef<any>();
   const [art, setArt] = useState<any>();
@@ -50,11 +43,9 @@ const Stream = ({
     season = searchParams.get("season");
     episode = searchParams.get("episode");
   }
-  
 
   const provider = useAppSelector((state) => state.options.api);
 
-  // Fetch poster data from TMDB
   useEffect(() => {
     async function fetchPosterData() {
       try {
@@ -94,66 +85,40 @@ const Stream = ({
   }, [params.imdb, params.type]);
 
   useEffect(() => {
-
-    
-
-    console.log("Params:", params);
-
     async function get8Stream() {
-      setLoading(true);
-      setError(false);
-      try {
       if (params.type === "movie") {
         const data = await playMovie(params.imdb, currentLang);
         // console.log(data);
         if (data?.success && data?.data?.link?.length > 0) {
-          // Only update URL and switch player if the URL has changed
-          if (url !== data?.data?.link) {
-            setUrl(data?.data?.link)
-            artInstance?.switchUrl(data?.data?.link)
-          }
+          art?.switchUrl(data?.data?.link);
+          setUrl(data?.data?.link);
           setAvailableLang(data?.availableLang);
         } else {
           setError(true);
-            //toast.error("No link found");
         }
       } else {
         const data = await playEpisode(
           params.imdb,
-          parseInt(season || "1"),
-          parseInt(episode || "1"),
+          parseInt(season as string),
+          parseInt(episode as string),
           currentLang
         );
         // console.log(data);
         if (data?.success && data?.data?.link?.length > 0) {
-          // Only update URL and switch player if the URL has changed
-          if (url !== data?.data?.link) {
-            setUrl(data?.data?.link)
-            artInstance?.switchUrl(data?.data?.link)
-          }
+          setUrl(data?.data?.link);
           setAvailableLang(data?.availableLang);
-         
+          art?.switchUrl(data?.data?.link);
         } else {
           setError(true);
-            //toast.error("No link found");
         }
       }
-    } catch (err) {
-      setError(true);
-      //toast.error("No link found");
-    } finally {
-      setLoading(false);
-    }
     }
     async function getConsumet() {
-      setLoading(true);
-      setError(false);
-      try {
       const data = await consumetPlay(
         params.id,
         params.type,
-        parseInt(episode || "1"),
-        parseInt(season || "1")
+        parseInt(episode as string),
+        parseInt(season as string)
       );
       console.log(data);
       if (data?.success && data?.data?.sources?.length > 0) {
@@ -161,25 +126,14 @@ const Stream = ({
         setSub(data?.data?.subtitles);
       } else {
         setError(true);
-          //toast.error("No link found");
-      }
-    } catch (err) {
-      setError(true);
-      //toast.error("No link found");
-    } finally {
-      setLoading(false);
-    }
-    }
-    // Only fetch new URL if we don't have one or if it's empty
-    if (!url || url.length === 0) {
-      if (provider === "8stream") {
-        get8Stream()
-      } else {
-        getConsumet()
       }
     }
-  }, [currentLang, season, episode, params.id, params.imdb, params.type, art]);
-
+    if (provider === "8stream") {
+      get8Stream();
+    } else {
+      getConsumet();
+    }
+  }, [currentLang]);
   const getPosterUrl = () => {
     if (posterData.backdropPath) {
       return `https://image.tmdb.org/t/p/original${posterData.backdropPath}`;
@@ -189,20 +143,10 @@ const Stream = ({
     }
     return ''; // Fallback empty string if no poster available
   };
-  const setArtInstance = (art: any) => {
-    artInstance = art
-  }
-
   return (
     <div className="fixed bg-black inset-0 flex justify-center items-end z-[200]">
       <div className="w-[100%] h-[100%] rounded-lg" id="player-container">
-        {loading ? (
-          <div className="flex justify-center items-center h-full">
-            <span className="loader"></span>
-          </div>
-        ) : error ? (
-          <ErrorMessage />
-        ) : url?.length > 0 ? (
+        {url?.length > 0 ? (
           <Artplayer
             artRef={ref}
             sub={sub}
@@ -221,11 +165,35 @@ const Stream = ({
               miniProgressBar: true,
               setting: true,
               theme: "#fcba03",
-              controls: [],
+              
+              controls: [
+                {
+                  name: "Lang",
+                  position: "right",
+                  index: 10,
+                  html: ``,
+                  style: {
+                    display: "none"
+                  },
+                  selector: [
+                    ...availableLang.map((item: any, i: number) => {
+                      return {
+                        default: i === 0,
+                        html: ``,
+                        value: item,
+                      };
+                    }),
+                  ],
+                  onSelect: function (item, $dom) {
+                    // @ts-ignore
+                    setCurrentLang(item.value); 
+                    return item.html; 
+                  },
+                }, 
+              ],
               playbackRate: true,
               fullscreen: true,
-              
-              
+              subtitleOffset: false,
               subtitle: {
                 type: "vtt",
                 escape: false,
@@ -249,11 +217,10 @@ const Stream = ({
                 // "--art-control-icon-size": "60px",
                 "--art-volume-handle-size": "20px",
                 "--art-volume-height": "150px",
-                
               },
             }}
             getInstance={(art: any) => {
-              setArtInstance(art)
+              setArt(art);
             }}
           />
         ) : (
@@ -265,11 +232,11 @@ const Stream = ({
       {/*<div
         className="absolute top-0 right-0 m-5 cursor-pointer z-50"
         onClick={() => {
-          router.replace(`/`);
+          router.replace(`/watch/${params.type}/${params.id}}`);
         }}
       >
         <CgClose className="text-white text-4xl" />
-      </div>*/}
+      </div>*/} 
     </div>
   );
 };
