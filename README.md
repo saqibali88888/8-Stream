@@ -2,7 +2,7 @@
 
 ## Watch movies and Series in multi-language online without any ads with minimal UI.
 
-This is a free Movies/Series search engine built with Next.js and powered by the [8-StreamAPI](https://github.com/himanshu8443/8StreamApi) and [Consumet API](https://github.com/consumet/api.consumet.org).
+This is a fre Movies/Series search engine built with Next.js and powered by the [8-StreamAPI](https://github.com/himanshu8443/8StreamApi) and [Consumet API](https://github.com/consumet/api.consumet.org).
 
 ---
 ![image](https://github.com/himanshu8443/8-Stream/assets/99420590/752c18da-46b2-4415-a461-e7de019e8019)
