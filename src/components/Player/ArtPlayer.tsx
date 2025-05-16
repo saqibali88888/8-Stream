@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import Artplayer from "artplayer";
 import { type Option } from "artplayer/types/option";
-import { type Component } from "artplayer/types/component";
 import artplayerPluginHlsQuality from "artplayer-plugin-hls-quality";
 import Hls from "hls.js";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
 
 // Define the level type
 interface HLSLevel {
@@ -68,73 +65,11 @@ export default function Player({
   onLanguageChange?: (lang: string) => void; // Add this to the type
   [key: string]: any;
 }) {
-  //const posterUrl = useSelector(
-  //(state: RootState) => state.posterUrl.currentPosterUrl
-  //);
-  const [isSandboxed, setIsSandboxed] = useState<boolean>(false);
-  const [showControls, setShowControls] = useState(false);
-  const [sandboxDetails, setSandboxDetails] = useState<SandboxDetails | null>(
-    null
-  );
-
   useEffect(() => {
-    // Load Sandblaster script
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/sandblaster/dist/sandblaster.min.js";
-    script.async = true;
-    document.body.appendChild(script);
-
-    // Sandbox detection function
-    const checkSandbox = () => {
-      try {
-        // Check if Sandblaster is available
-        if (window.sandblaster && window.sandblaster.detect) {
-          // Use Sandblaster to detect sandbox status
-          const result = window.sandblaster.detect();
-
-          // Set sandboxed state
-          setIsSandboxed(result.sandboxed === true);
-
-          // Store full sandbox details
-          setSandboxDetails(result);
-
-          // Log detailed sandbox information
-          console.log("Sandbox Detection Result:", result);
-        } else {
-          // Fallback detection methods
-          // Method 1: Check document.sandbox attribute
-          if (document.sandbox && document.sandbox.length > 0) {
-            setIsSandboxed(true);
-          }
-
-          // Method 2: Check for CSP restrictions
-          try {
-            const testElement = document.createElement("div");
-            testElement.innerHTML = '<img src="data:text/html">';
-          } catch (e) {
-            setIsSandboxed(true);
-          }
-        }
-      } catch (error) {
-        console.error("Sandbox detection error:", error);
-        setIsSandboxed(false);
-      }
-    };
-
-    // Wait for script to load
-    script.onload = checkSandbox;
-
-    console.log(posterUrl);
-    const storedImageUrl = localStorage.getItem("currentPosterUrl");
-    const container = artRef.current;
-
-    if (!(container instanceof Element)) {
-      console.error("Invalid container element for ArtPlayer");
-      return;
-    }
 
     const style = document.createElement("style");
     style.textContent = `
+    
         .control-button {
   position: absolute;
   top: 50%;
@@ -384,7 +319,7 @@ export default function Player({
         },
       ],
       container: artRef.current!,
-      layers: [
+      layers:[
         {
           name: "poster",
           html: posterUrl
@@ -410,7 +345,6 @@ export default function Player({
             console.info("mounted", args);
           },
         },
-
         {
           name: "languageSelector",
           html: `
@@ -424,20 +358,25 @@ export default function Player({
                 cursor: pointer;
                 z-index: 100;
                 transition: all 0.3s ease;
+                backdrop-filter: blur(10px);
+                svg fill: black !important;
+
+                transform: translateZ(0);
               ">
                 <div class="current-lang" style="
                   color: black;
                   background-color: #fcba03;
-                  font-size: 14px;
+                  font-size: 15px;
                   font-weight: 500;
                   display: flex;
                   align-items: center;
                   gap: 4px;
+                  -webkit-font-smoothing: antialiased;
+                  text-rendering: optimizeLegibility; 
+                  text-shadow: none !important;
                 ">
                   <span>${availableLang[0] || "Select Language"}</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 9l6 6 6-6"/>
-                  </svg>
+                  <svg fill="#000000" width="15px" height="15px" viewBox="-6.5 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>dropdown</title> <path d="M18.813 11.406l-7.906 9.906c-0.75 0.906-1.906 0.906-2.625 0l-7.906-9.906c-0.75-0.938-0.375-1.656 0.781-1.656h16.875c1.188 0 1.531 0.719 0.781 1.656z"></path> </g></svg>
                 </div>
                 <div class="lang-options" style="
                   display: none;
@@ -446,12 +385,13 @@ export default function Player({
                   right: 0;
                   background-color: rgba(0, 0, 0, 0.9);
                   border-radius: 4px;
-                  margin-top: 4px;
-                  min-width: 100px;
+                  margin-top: 2px;
+                  min-width: 80px;
                   max-height: 100px;
                   overflow-y: auto;
-                  border: 1px solid white;
+                  border: 1px solid #333333;
                   z-index: 100;
+                  width: auto;
                 ">
                   ${availableLang
                     .map(
@@ -596,31 +536,6 @@ export default function Player({
             }
           },
         },
-        // Add sandbox warning layer
-        ...(isSandboxed
-          ? [
-              {
-                name: "sandbox-warning",
-                html: `
-            <div style="
-              position: absolute;
-              top: 10px;
-              left: 10px;
-              background-color: rgba(255, 0, 0, 0.7);
-              color: white;
-              padding: 5px 10px;
-              border-radius: 4px;
-              z-index: 100;
-            ">
-              Sandboxed Environment Detected
-            </div>
-          `,
-                style: {
-                  zIndex: "100",
-                },
-              },
-            ]
-          : []),
       ],
       plugins: [],
       customType: {
@@ -723,7 +638,6 @@ export default function Player({
         },
       },
     });
-
     art.on("ready", () => {
       art.play();
       art.forward = 10;
@@ -744,12 +658,6 @@ export default function Player({
       } else if (!isInputFocused && event?.code === "KeyF") {
         event.preventDefault();
         art.fullscreen = !art.fullscreen;
-      } else if (!isInputFocused && event?.code === "ArrowLeft") {
-        event.preventDefault();
-        art.currentTime = Math.max(0, art.currentTime - 10);
-      } else if (!isInputFocused && event?.code === "ArrowRight") {
-        event.preventDefault();
-        art.currentTime = Math.min(art.duration, art.currentTime + 10);
       }
     });
     // Add backward button (15s)
@@ -819,7 +727,6 @@ export default function Player({
     });
 
     //art.controls.remove("playAndPause");
-
     if (sub?.length > 0) {
       art.controls.add({
         name: "subtitle",
@@ -849,35 +756,14 @@ export default function Player({
       name: "volume",
       position: "left",
     });
-   
- 
-
- 
-    
     console.log("controls", art.controls);
-    // If sandbox is detected, add a notice
-    if (isSandboxed) {
-      art.notice.show = "Running in a restricted environment";
-    }
     return () => {
       if (art && art.destroy) {
         art.destroy(false);
         art?.hls?.destroy();
       }
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
     };
-  }, [artRef.current, posterUrl]);
+  }, [posterUrl]);
 
-  //
-
-  return (
-    <div
-      ref={artRef}
-      className="w-full h-full"
-      data-sandboxed={isSandboxed}
-      {...rest}
-    ></div>
-  );
+  return <div ref={artRef} {...rest}></div>;
 }
